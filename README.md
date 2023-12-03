@@ -24,7 +24,7 @@ Esto copiará el contenido del archivo o directorio especificado en el portapape
 Para crear un enlace simbólico para un script de Python, utilice `easy-link.sh` de la siguiente manera:
 
 ```bash
-./easy-link.sh mi_script.py mi_comando
+easy-link.sh mi_script.py mi_comando
 ```
 
 Esto creará un enlace simbólico en `/usr/local/bin`, permitiendo ejecutar `mi_script.py` usando `mi_comando` desde cualquier lugar en el sistema.
