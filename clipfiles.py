@@ -3,28 +3,53 @@ import os
 import sys
 import pyperclip
 
-# Script para recopilar el contenido de archivos y directorios pasados como argumentos.
-# Si el argumento es un archivo, agrega su contenido al portapapeles.
-# Si el argumento es un directorio, agrega el contenido de todos los archivos dentro del directorio al portapapeles.
-# Después de procesar todos los argumentos, el contenido recopilado se copia al portapapeles listo para ser pegado en cualquier lugar.
-# Cada archivo se separa por una línea en blanco para mantener el contenido claramente diferenciado.
+
+def is_binary(file_path):
+    """
+    Determina si un archivo dado es binario o no leyendo un bloque de su contenido.
+    Un archivo se considera binario si contiene un cierto porcentaje de caracteres no imprimibles.
+    """
+    try:
+        with open(file_path, "rb") as file:
+            chunk = file.read(1024)  # Lee los primeros 1024 bytes
+            if b"\0" in chunk:  # Si hay un null byte, asume que es binario
+                return True
+            text_characters = bytearray(
+                {7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F}
+            )
+            return bool(chunk.translate(None, text_characters))
+    except Exception as e:
+        print(f"No se pudo leer {file_path}: {e}")
+        return False
 
 
 def process_path(path, buffer):
     # Procesa un archivo o directorio y agrega su contenido al buffer
-    if os.path.isfile(path):
-        with open(path, "r") as file:
-            buffer.append(
-                f"```{path}\n{file.read()}```\n"
-            )  # Agrega el contenido del archivo al buffer
+    if os.path.isfile(path) and not is_binary(path):
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as file:
+                buffer.append(
+                    f"```{path}\n{file.read()}```\n"
+                )  # Agrega el contenido del archivo al buffer
+        except Exception as e:
+            print(f"No se pudo leer {file_path}: {e}")
     elif os.path.isdir(path):
         for root, dirs, files in os.walk(path):
+            # Si '.git' está en el camino, salta este directorio y continúa con el siguiente
+            if ".git" in root.split(os.sep):
+                continue
             for file in files:
                 file_path = os.path.join(root, file)
-                with open(file_path, "r") as file:
-                    buffer.append(
-                        f"```{file_path}\n{file.read()}```\n"
-                    )  # Agrega el contenido de cada archivo en el directorio al buffer
+                if not is_binary(file_path):
+                    try:
+                        with open(
+                            file_path, "r", encoding="utf-8", errors="ignore"
+                        ) as file:
+                            buffer.append(
+                                f"```{file_path}\n{file.read()}```\n"
+                            )  # Agrega el contenido de cada archivo en el directorio al buffer
+                    except Exception as e:
+                        print(f"No se pudo leer {file_path}: {e}")
     else:
         print(f"{path} no es un archivo o directorio válido.")
 
